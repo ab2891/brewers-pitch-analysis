@@ -1,0 +1,2 @@
+pitcher,pitch_type,stand,p_throws,inning_topbot,previous_pitch_type,previous_description,balls,strikes,outs_when_up,inning,pitch_number,score_diff,runner_1b,runner_2b,runner_3b
+681982,FF,R,R,Top,NO_OBSERVED_PREVIOUS_PITCH,NO_OBSERVED_PREVIOUS_PITCH,0,0,0,1,1,0,0,0,0
