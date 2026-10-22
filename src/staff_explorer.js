@@ -5,17 +5,17 @@ let M=new Map(),H=new Map(),menus=new Map(),active=null,balls=0,strikes=0,rows=[
 const signed=(n,d=3)=>(n>=0?'+':'')+n.toFixed(d),pitchName=p=>names[p]||p;
 function cell(row,value,cls){const td=document.createElement('td');td.textContent=value;if(cls)td.className=cls;row.append(td);return td}
 function key(){return [$('batter').value,balls,strikes,$('outs').value,$('bases').value].join('|')}
-function decoded(r,exact){return exact?{pitch:D.pitches[r[7]],rv:r[8],erpa:r[9],n:r[10],history:r[11],sparse:r[12],p:r.slice(13,22),fallback:r[22]}:{pitch:D.pitches[r[5]],rv:r[6],erpa:r[7],n:r[8],sparse:r[9],p:r.slice(10,19),fallback:r[19]}}
+function decoded(r,exact){return exact?{pitch:D.pitches[r[7]],rv:r[8],erp:-r[8],improvement:r[9],n:r[10],history:r[11],sparse:r[12],p:r.slice(13,22),fallback:r[22]}:{pitch:D.pitches[r[5]],rv:r[6],erp:-r[6],improvement:r[7],n:r[8],sparse:r[9],p:r.slice(10,19),fallback:r[19]}}
 function historyMenu(){const old=$('history').value;$('history').replaceChildren(new Option('Average over reachable histories','MIX'));for(const suffix of menus.get(key())||[]){const [p,r]=suffix.split('|').map(Number);$('history').add(new Option(p===0?'Start of plate appearance':pitchName(D.pitches[p])+' → '+D.results[r],suffix))}if([...$('history').options].some(o=>o.value===old))$('history').value=old}
 function explain(){
  const row=rows.find(r=>r.pitch===$('explain-pitch').value)||rows[0];if(!row)return;
  const total=rows.reduce((sum,r)=>sum+r.n,0),mix=rows.map(r=>total?r.n/total:1/rows.length);
  const referenceP=D.outcomes.map((_,j)=>rows.reduce((sum,r,i)=>sum+mix[i]*r.p[j],0));
  const w=D.weights[[balls,strikes,$('outs').value,$('bases').value].join('|')];
- const reference=row.rv+row.erpa;
- $('calculation').textContent=pitchName(row.pitch)+': '+signed(reference,6)+' reference batting runs/pitch − '+signed(row.rv,6)+' candidate batting runs/pitch = '+signed(row.erpa,6)+' ERPA runs/pitch ('+signed(100*row.erpa)+' runs/100).';
+ const reference=row.rv+row.improvement;
+ $('calculation').textContent=pitchName(row.pitch)+': ERP = −('+signed(row.rv,6)+' expected batting run change) = '+signed(row.erp,6)+' runs/pitch ('+signed(100*row.erp)+' runs/100). Usual-mix ERP: '+signed(-reference,6)+' runs/pitch. Improvement over usual mix: '+signed(row.improvement*100)+' runs/100.';
  $('contributions').replaceChildren();let sum=0;
- D.outcomes.forEach((label,j)=>{const contribution=(referenceP[j]-row.p[j])*w[j];sum+=contribution;const tr=document.createElement('tr');cell(tr,labels[label]);cell(tr,(100*referenceP[j]).toFixed(2)+'%','num');cell(tr,(100*row.p[j]).toFixed(2)+'%','num');cell(tr,signed(w[j],5),'num');cell(tr,signed(contribution*100),contribution>=0?'good num':'bad num');$('contributions').append(tr)});
+ D.outcomes.forEach((label,j)=>{const contribution=-row.p[j]*w[j],improvement=(referenceP[j]-row.p[j])*w[j];sum+=contribution;const tr=document.createElement('tr');cell(tr,labels[label]);cell(tr,(100*referenceP[j]).toFixed(2)+'%','num');cell(tr,(100*row.p[j]).toFixed(2)+'%','num');cell(tr,signed(w[j],5),'num');cell(tr,signed(contribution*100),contribution>=0?'good num':'bad num');cell(tr,signed(improvement*100),improvement>=0?'good num':'bad num');$('contributions').append(tr)});
  $('contribution-total').textContent=signed(sum*100)+' runs/100';
 }
 function render(){
@@ -25,23 +25,24 @@ function render(){
  rows=raw.map(r=>decoded(r,exact)).sort((a,b)=>a.rv-b.rv);
  const best=rows[0],person=D.pitchers.find(p=>String(p.id)===$('pitcher').value),batter=D.batters[Number($('batter').value)];
  const side=batter.bat_side==='S'?(person.throws==='R'?'L':'R'):batter.bat_side;
- const gap=rows.length>1?rows[1].rv-best.rv:null,reference=best.rv+best.erpa;
- $('headline').textContent='#1 '+pitchName(best.pitch)+' · '+signed(best.erpa*100)+' ERPA runs/100';
+ const gap=rows.length>1?rows[1].rv-best.rv:null,reference=best.rv+best.improvement;
+ $('headline').textContent='#1 '+pitchName(best.pitch)+' · '+signed(best.erp*100)+' ERP runs/100';
  $('context').textContent=person.name+' ('+person.throws+'HP) vs '+batter.name+' (bats '+side+') · '+balls+'–'+strikes+' · '+$('outs').selectedOptions[0].text+' · '+$('bases').selectedOptions[0].text;
- $('baseline').textContent='This pitcher’s usual supported mix: '+signed(reference,5)+' batting runs/pitch. Leading pitch: '+signed(best.rv,5)+'. Lower batting run value favors the pitcher.';
- let note=gap===null?'One supported candidate: no alternative comparison; ERPA is zero.':'Modeled lead over #2 '+pitchName(rows[1].pitch)+': '+(100*gap).toFixed(3)+' runs/100. '+(gap<.001?'Close options; the model does not clearly separate them.':'Point-estimate preference, not a statistical guarantee.');
+ $('baseline').textContent='ERP is the expected reduction in batting run expectancy on this pitch. Usual supported mix: '+signed(-reference*100)+' ERP runs/100. Leading pitch: '+signed(best.erp*100)+'. Improvement over that mix: '+signed(best.improvement*100)+' runs/100. Higher ERP favors the pitcher.';
+ let note=gap===null?'One supported candidate: ERP can be nonzero, but improvement over usual mix is zero and no alternative comparison is available.':'Modeled lead over #2 '+pitchName(rows[1].pitch)+': '+(100*gap).toFixed(3)+' runs/100. '+(gap<.001?'Close options; the model does not clearly separate them.':'Point-estimate preference, not a statistical guarantee.');
+ if(best.erp<0)note+=' Even the leading pitch projects an increase in batting run expectancy here; it is the smallest increase among supported choices.';
  if(best.fallback)note+=' Count support fallback: no pitch passed the five-pitch count/hand gate.';
  if(best.n<20)note+=' Fewer than 20 observations for this pitch/count/side.';
  if(exact&&best.history<5)note+=' Only '+best.history+' observations of this pitcher/count/side/history; the forecast extrapolates.';
  note+=' '+(best.sparse*100).toFixed(1)+'% of predicted outcome probability uses run-impact cells with fewer than 20 direct observations.';
  $('support').textContent=note;
  const total=rows.reduce((n,r)=>n+r.n,0);$('rankings').replaceChildren();
- rows.forEach((r,i)=>{const tr=document.createElement('tr');if(i===0)tr.className='best';cell(tr,String(i+1));cell(tr,pitchName(r.pitch)+(i===0?' · best modeled':''));cell(tr,signed(r.rv,5),'num');cell(tr,signed(r.erpa*100),r.erpa>=0?'good num':'bad num');cell(tr,((r.rv-best.rv)*100).toFixed(3),'num');cell(tr,((r.p[5]+r.p[6]+r.p[7])*100).toFixed(1),'num');cell(tr,(r.p[7]*100).toFixed(2),'num');cell(tr,(r.p[2]*100).toFixed(1),'num');cell(tr,String(r.n),'num');cell(tr,(100*(total?r.n/total:1/rows.length)).toFixed(1),'num');$('rankings').append(tr)});
+ rows.forEach((r,i)=>{const tr=document.createElement('tr');if(i===0)tr.className='best';cell(tr,String(i+1));cell(tr,pitchName(r.pitch)+(i===0?' · best modeled':''));cell(tr,signed(r.erp*100),r.erp>=0?'good num':'bad num');cell(tr,signed(r.improvement*100),r.improvement>=0?'good num':'bad num');cell(tr,((r.rv-best.rv)*100).toFixed(3),'num');cell(tr,((r.p[5]+r.p[6]+r.p[7])*100).toFixed(1),'num');cell(tr,(r.p[7]*100).toFixed(2),'num');cell(tr,(r.p[2]*100).toFixed(1),'num');cell(tr,String(r.n),'num');cell(tr,(100*(total?r.n/total:1/rows.length)).toFixed(1),'num');$('rankings').append(tr)});
  const old=$('explain-pitch').value;$('explain-pitch').replaceChildren(...rows.map(r=>new Option(pitchName(r.pitch),r.pitch)));if(rows.some(r=>r.pitch===old))$('explain-pitch').value=old;explain();
 }
 function overview(){
  $('overview').replaceChildren();const person=D.pitchers.find(p=>String(p.id)===$('pitcher').value);
- D.batters.forEach((b,i)=>{const tr=document.createElement('tr'),td=cell(tr,'');const button=document.createElement('button');button.textContent=b.name;button.onclick=()=>{$('batter').value=String(i);balls=0;strikes=0;$('outs').value='0';$('bases').value='0';$('history').value='MIX';historyMenu();render();$('headline').scrollIntoView({behavior:'smooth',block:'center'})};td.append(button);cell(tr,b.bat_side==='S'?(person.throws==='R'?'L':'R'):b.bat_side);for(const [balls,strikes] of [[0,0],[0,2],[3,2]]){const rr=M.get([i,balls,strikes,0,0].join('|')).map(r=>decoded(r,false)).sort((a,b)=>a.rv-b.rv);cell(tr,rr[0].pitch+' ('+signed(rr[0].erpa*100,2)+')')} $('overview').append(tr)})
+ D.batters.forEach((b,i)=>{const tr=document.createElement('tr'),td=cell(tr,'');const button=document.createElement('button');button.textContent=b.name;button.onclick=()=>{$('batter').value=String(i);balls=0;strikes=0;$('outs').value='0';$('bases').value='0';$('history').value='MIX';historyMenu();render();$('headline').scrollIntoView({behavior:'smooth',block:'center'})};td.append(button);cell(tr,b.bat_side==='S'?(person.throws==='R'?'L':'R'):b.bat_side);for(const [balls,strikes] of [[0,0],[0,2],[3,2]]){const rr=M.get([i,balls,strikes,0,0].join('|')).map(r=>decoded(r,false)).sort((a,b)=>a.rv-b.rv);cell(tr,rr[0].pitch+' ('+signed(rr[0].erp*100,2)+')')} $('overview').append(tr)})
 }
 async function loadPitcher(){
  const token=++loadId,id=$('pitcher').value,person=D.pitchers.find(p=>String(p.id)===id);

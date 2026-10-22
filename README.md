@@ -1,13 +1,17 @@
 # Brewers Pitch Analysis
 
 **Current staff matchup:** [individual pitcher plans](STAFF_RAYS_GAME_PLAN.md),
-[full ERPA explanation](ERPA_GUIDE.md), and
+[full ERP explanation](ERP_GUIDE.md), and
 [staff explorer](artifacts/brewers_rays_20261023_staff/explorer.html).
 See [staff results and verification](STAFF_RESULTS.md) for coverage and evidence.
 The active-roster snapshot covers all 13 Brewers pitchers against 14 Rays hitters,
 each with a separate supported repertoire, count/hand baseline and ranked plan.
 Runners and outs enter the probability model as well as the run-value mapping.
 The staff model pools data; it does not fit a separate sparse model per reliever.
+**ERP (Expected Runs Prevented) = −expected batting run change on the next pitch.**
+Higher is better; negative ERP means an expected increase in scoring opportunity.
+Improvement over usual mix is a separate comparison. Legacy Miz-only reports
+retain their original ERPA definition; the current staff reports use ERP.
 World Series eligibility, health and game availability are not established by
 active-roster membership.
 
@@ -29,7 +33,7 @@ frozen through October 20. All 54 player-season files reconcile physical pitch
 counts to MLB logs; overlapping pitcher/hitter observations are deduplicated.
 Model selection uses regular-season chronological development folds. October
 diagnostics reuse previously inspected data and are not independent validation
-of a pitch-choice policy. See the ERPA guide for units, baselines and limits.
+of a pitch-choice policy. See the ERP guide for units, baselines and limits.
 Generated explorers, datasets and fitted models are excluded from Git; artifact
 links become available locally after acquisition, training and report generation.
 

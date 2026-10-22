@@ -24,6 +24,10 @@ class StaffTests(unittest.TestCase):
         self.assertAlmostEqual(ranked[ranked.pitcher.eq('B')].usual_mix_batting_run_delta.iloc[0],-.017)
         self.assertEqual(ranked[ranked['rank'].eq(1)].candidate_pitch.tolist(),['FF','CH'])
         self.assertTrue(np.allclose((ranked.reference_mix_weight*ranked.erpa_runs_per_pitch).groupby(ranked.pitcher).sum(),0))
+        self.assertTrue(np.allclose(ranked.erp_runs_per_pitch,-ranked.expected_batting_run_delta))
+        fastball=ranked[ranked.candidate_pitch.eq('FF')].iloc[0]
+        self.assertAlmostEqual(fastball.erp_runs_per_pitch,.01)
+        self.assertAlmostEqual(fastball.improvement_over_usual_mix_runs_per_pitch,.012)
 
     def test_single_candidate_is_not_claimed_as_above_reference_improvement(self):
         frame=pd.DataFrame(dict(pitcher=['A'],batter=['X'],candidate_pitch=['FC'],
@@ -32,6 +36,8 @@ class StaffTests(unittest.TestCase):
         self.assertEqual(result.erpa_runs_per_pitch.iloc[0],0)
         self.assertEqual(result.reference_mix_weight.iloc[0],1)
         self.assertEqual(result['rank'].iloc[0],1)
+        self.assertAlmostEqual(result.erp_runs_per_pitch.iloc[0],-.1)
+        self.assertEqual(result.improvement_over_usual_mix_runs_per_pitch.iloc[0],0)
 
     def test_repertoire_is_pitcher_specific_and_sparse_counts_are_flagged(self):
         def pitches(person,action):

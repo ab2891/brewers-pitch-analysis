@@ -6,7 +6,7 @@ and all 24 runner/out states. This yields **52,416 count situations** and
 **491,448 exact-history situations**, comparing **1,456,344 supported candidate
 pitches**. The [individual matchup sheets](STAFF_RAYS_GAME_PLAN.md) show each
 pitcher's repertoire, openers, conditional ball/called-strike branches and
-two-strike choices. Read [ERPA_GUIDE.md](ERPA_GUIDE.md) for the full score definition.
+two-strike choices. Read [ERP_GUIDE.md](ERP_GUIDE.md) for the full score definition.
 
 The 13 pitchers are Aaron Ashby, Abner Uribe, Antonio Senzatela, Chad Patrick,
 DL Hall, Dustin May, Jacob Misiorowski, JoJo Romero, Kyle Harrison, Logan
@@ -57,22 +57,24 @@ this source snapshot. The explorer displays these sample sizes and results;
 the pooled result does not establish reliable recommendations for each pitcher.
 
 Rankings minimize immediate expected batting run change. They do not optimize
-late-game win probability, location intent, bullpen use or fatigue. ERPA compares
-each pitch with that same pitcher's own supported usual mix; it cannot rank
-different pitchers by their ERPA values alone. Sparse actions, sparse histories,
+late-game win probability, location intent, bullpen use or fatigue. ERP is the negative expected batting run change, measured on a common scale
+for the same hitter and state. Improvement over each pitcher's usual mix is
+reported separately and is not directly comparable across pitchers as an ability
+rating. Neither score alone establishes an overall pitcher ranking. Sparse actions, sparse histories,
 pooled advancement outcomes and selection confounding remain material limits.
 
 ## Verification and files
 
 All 28 unit tests pass. Generated-data checks verify coverage, correct pitcher and
 batting side, legal prior histories, finite normalized probabilities, ordered
-ranks, ERV arithmetic and zero reference-weighted ERPA within each comparison.
+ranks, ERV arithmetic and ERP equal to negative expected batting run change and zero reference-weighted
+improvement over usual mix within each comparison.
 The full check is saved in
 `artifacts/brewers_rays_20261023_staff/validation.json`.
 
 Chromium loaded all 13 pitcher datasets, checked switch-hitter sides, exercised
 all 12 counts in average and exact-history modes, changed runners/outs and
-verified the ERPA contribution arithmetic. There were no JavaScript errors.
+verified the score contribution arithmetic. There were no JavaScript errors.
 Desktop and mobile layouts render without horizontal page overflow; wide tables
 scroll inside their cards.
 
@@ -81,3 +83,14 @@ HTTP. The original Miz-only runs remain unchanged. Models, source hashes,
 development selection, per-pitcher outputs and diagnostics are under
 `artifacts/brewers_rays_20261023_staff/`. Source roster and schedule snapshots are
 under `data/processed/staff_rays/`. Reproduction commands are in [README.md](README.md).
+
+## ERP naming update
+
+The current staff explorer, matchup sheets and exports use **ERP = Expected
+Runs Prevented**, defined as the expected reduction in batting run expectancy
+on the next pitch: `ERP = -expected_batting_run_delta`. This is a score-definition
+change, not just a relabeling of the old ERPA. Saved predictions and pitch
+rankings are unchanged. Improvement over usual mix remains a separate field.
+ERP can be negative and need not be zero when only one pitch is supported.
+Legacy `erpa_*` CSV columns retain their original mix-relative meaning for
+compatibility; use the new `erp_*` columns for ERP.

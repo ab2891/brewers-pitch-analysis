@@ -153,6 +153,21 @@ def support_inventory(data,person,batters):
         repertoire=sorted(inventory.candidate_pitch.unique()),excluded_pitch_hand_pairs=exclusions)
 
 
+def add_erp_columns(frame):
+    """ERP is the expected reduction in run expectancy, not mix-relative gain.
+
+    Negative values are retained: a pitch can increase expected scoring.
+    Legacy erpa columns retain their original mix-relative meaning.
+    """
+    result=frame.copy()
+    result['erp_runs_per_pitch']=-result.expected_batting_run_delta
+    result['erp_runs_per_100']=100*result.erp_runs_per_pitch
+    result['usual_mix_erp_runs_per_pitch']=-result.usual_mix_batting_run_delta
+    result['improvement_over_usual_mix_runs_per_pitch']=result.erp_runs_per_pitch-result.usual_mix_erp_runs_per_pitch
+    result['improvement_over_usual_mix_runs_per_100']=100*result.improvement_over_usual_mix_runs_per_pitch
+    return result
+
+
 def rank_candidates(frame,keys):
     result=frame.copy()
     keys=(['pitcher'] if 'pitcher' in result and 'pitcher' not in keys else [])+list(keys)
@@ -166,6 +181,7 @@ def rank_candidates(frame,keys):
     result['erpa_runs_per_100']=100*result.erpa_runs_per_pitch
     result['regret_vs_best_runs']=result.expected_batting_run_delta-result.groupby(keys).expected_batting_run_delta.transform('min')
     result['rank']=result.groupby(keys).expected_batting_run_delta.rank(method='first').astype(int)
+    result=add_erp_columns(result)
     return result.sort_values(keys+['rank']).reset_index(drop=True)
 
 

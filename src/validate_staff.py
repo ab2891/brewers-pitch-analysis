@@ -33,6 +33,10 @@ def main():
             erv=(frame[P].to_numpy()*values.reindex(idx).to_numpy()).sum(axis=1)
             assert np.allclose(erv,frame.expected_batting_run_delta)
             assert np.allclose(frame.usual_mix_batting_run_delta-frame.expected_batting_run_delta,frame.erpa_runs_per_pitch)
+            assert np.allclose(frame.erp_runs_per_pitch,-frame.expected_batting_run_delta)
+            assert np.allclose(frame.erp_runs_per_100,100*frame.erp_runs_per_pitch)
+            assert np.allclose(frame.improvement_over_usual_mix_runs_per_pitch,
+                frame.erp_runs_per_pitch-frame.usual_mix_erp_runs_per_pitch)
         for b in manifest['batters']:
             assert average.loc[average.batter.eq(str(b['id'])),'stand'].eq(batter_side(b['bat_side'],person['throws'])).all()
         for r in history[['balls','strikes','previous_pitch','previous_result']].drop_duplicates().itertuples(index=False):
@@ -48,7 +52,7 @@ def main():
     result=dict(checked_at_utc=now(),status='passed',pitchers=checked,
         count_situations=sum(p['count_situations'] for p in checked),
         candidate_comparisons=sum(p['candidate_comparisons'] for p in checked),
-        invariants='Complete unique states, legal histories, correct pitcher and batting side, finite normalized probabilities, ordered ranks, ERV matches outcome weights, own-mix ERPA zero')
+        invariants='Complete unique states, legal histories, correct pitcher and batting side, finite normalized probabilities, ordered ranks, ERP=-ERV, improvement over usual mix separately zero-weighted')
     atomic_json(RUN/'validation.json',result)
     print(json.dumps({k:v for k,v in result.items() if k!='pitchers'},indent=2))
 

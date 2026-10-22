@@ -1,5 +1,10 @@
 # Understanding ERPA in this project
 
+**Historical definition.** The current staff explorer uses **ERP = Expected Runs
+Prevented**, the negative expected batting run change. Read [ERP_GUIDE.md](ERP_GUIDE.md)
+for the current score. This document explains the older mix-relative ERPA, now
+shown separately as “improvement over usual mix.”
+
 ERPA means **Expected Runs Prevented Above the pitcher's usual supported pitch
 mix**. It asks: *In this exact matchup and situation, how much lower is the
 predicted batting run value of this pitch than the predicted value of this same

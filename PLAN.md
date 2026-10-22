@@ -4,6 +4,16 @@ Reviewed September 22, 2026 against the pasted conversation, README, downloader,
 saved data, and local process list. This is the revised plan; pending changes below
 have not yet been implemented unless noted in the progress update below.
 
+## ERP score definition: October 21, 2026
+
+The current staff interface and reports use **ERP = Expected Runs Prevented**:
+the negative expected batting run change on the next pitch. Improvement over the
+pitcher's usual mix is shown separately. This is a score-definition change;
+predictions, fitted models and pitch rankings are unchanged. ERP can be negative
+and can be nonzero for a single supported candidate. New exports contain explicit
+`erp_*` and `improvement_over_usual_mix_*` fields; legacy `erpa_*` columns retain
+their previous mix-relative meaning. See `ERP_GUIDE.md`.
+
 ## Full active staff vs Rays: October 21, 2026
 
 The staff extension lives in `artifacts/brewers_rays_20261023_staff/` and preserves
@@ -18,13 +28,15 @@ added strictly prior-date pitcher contact history on the same chronological
 regular-season folds. The development selection and already-seen postseason
 diagnostics are recorded separately; no new independent evaluation is claimed.
 The explorer loads one pitcher's compressed data at a time, ranks each supported
-candidate and explains ERPA by outcome. Individual sheets show opening choices
+candidate and explains ERP by outcome. Individual sheets show opening choices
 and conditional ball/called-strike branches rather than a fixed script.
 
-See `STAFF_RAYS_GAME_PLAN.md` and `ERPA_GUIDE.md`. Active rosters are not a final
+See `STAFF_RAYS_GAME_PLAN.md` and `ERP_GUIDE.md`. Active rosters are not a final
 World Series availability guarantee. The snapshot's schedule still lists Game 1
 on October 23; a last-game assumption was not used to fabricate completed games.
-ERPA is relative to each pitcher's own mix and cannot rank relievers by ability.
+Improvement over usual mix is relative to each pitcher's own reference and cannot
+rank relievers by ability. ERP itself is on a common run-change scale for the
+same hitter and situation, but still does not establish an overall ability rating.
 Expected-run rankings also do not optimize win probability or bullpen deployment.
 
 ## Earlier runner/out probability extension: October 21, 2026
